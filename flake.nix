@@ -16,10 +16,5 @@
             pkgs = nixpkgs.legacyPackages.${system};
           in
           import ./header.nix { inherit pkgs; };
-##            pkgs.writers.writeBashBin "my-script" ''
-##              DATE="$(${pkgs.ddate}/bin/ddate +'the %e of %B%, %Y')"
-##              ${pkgs.cowsay}/bin/cowsay Hello, world! Today is $DATE.
-##            '';
       });
-
 }
