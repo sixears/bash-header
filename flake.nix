@@ -9,12 +9,12 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       rec {
-        defaultPackage = packages.bash-header;
-
         packages.bash-header =
           let
             pkgs = nixpkgs.legacyPackages.${system};
           in
-          import ./header.nix { inherit pkgs; };
+            import ./header.nix { inherit pkgs; };
+
+        defaultPackage = packages.bash-header;
       });
 }
