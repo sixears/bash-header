@@ -54,6 +54,7 @@ Cmd[tee]=${pkgs.coreutils}/bin/tee
 Cmd[touch]=${pkgs.coreutils}/bin/touch
 Cmd[tr]=${pkgs.coreutils}/bin/tr
 Cmd[tty]=${pkgs.coreutils}/bin/tty
+Cmd[wc]=${pkgs.coreutils}/bin/wc
 
 DryRun=false
 OrigArgs=( "$@" )
@@ -284,9 +285,9 @@ gocmde() {
 
 # --------------------------------------
 
-# check that the value of $1 is $0, else fail citing $2
-check() { local rv=$1; [ 0 -eq "$1" ] || die "$1" "$2 failed"; }
-check_() { check $? "$1"; }
+# check that the value of $1 is $0, else fail citing $2...
+check() { local rv=$1; [ 0 -eq "$1" ] || die "$1" "''${*:2} failed"; }
+check_() { check $? "''${@:1}"; }
 
 # --------------------------------------
 
