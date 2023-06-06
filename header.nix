@@ -122,13 +122,15 @@ showcmd () {
 # Internal engine for go* cmds.  Takes a cmd (list of words), and executes that
 # cmd.  Uses info() to write cmd to stderr in verbose mode.
 #
-# Usage: _go <--exit <NUM>|--no-exit> option* --CMD
+# Usage: _go <--exit <NUM>|--no-exit|no-exit-status> option* --CMD
 #
 # Options
 #   --exit <NUM>           If the command fails, exit(die) with this exit code.
 #                          Either this, or --no-exit must be specified.
-#   --no-exit              Do not exit, evin if the command failes.  Either this
+#   --no-exit              Do not exit, evin if the command fails.   Either this
 #                          or --exit <NUM> must be specified,
+#   --no-exit-status       Always return 0, even if the command exits non-zero.
+#                          Implies --no-exit.
 #   --expect <NUM(,NUM)*>  Typically, the cmd is considered to have failed if it
 #                          exits with any code other than 0.  This sets the
 #                          expected exit values to some other set.
@@ -146,7 +148,7 @@ _go() {
   # an argument to -o !
   local -a getopt_opts=( --options ""
 			 --long exit:,no-dry-run,eval,no-exit,expect:,cmd:
-                         --long info-level: )
+                         --long info-level:,no-exit-status )
   local -a getopt_cmd=( ''${Cmd[getopt]} "''${getopt_opts[@]}" -- "$@" )
   # no quote protection around $(...) here - getopt pre-quotes values
   local -a opts=$( "''${getopt_cmd[@]}" ); local rv=$?
@@ -163,18 +165,20 @@ _go() {
   local usecmd=""
   local -a cmd=()
   local info_level=1
+  local exit_zero=false
 
   while [[ 0 -ne $# ]]; do
     case "$1" in
-      --exit       ) exit="$2"            ; shift 2 ;;
-      --no-exit    ) no_exit=true         ; shift   ;;
-      --expect     ) IFS=, expect+=("$2") ; shift 2 ;;
-      --no-dry-run ) dryrun=false         ; shift   ;;
-      --eval       ) eval=true            ; shift   ;;
-      --cmd        ) usecmd="$2"          ; shift 2 ;;
-      --info-level ) info_level="$2"      ; shift 2 ;;
-      --           ) cmd+=("''${@:2}")    ; break   ;;
-      *            ) cmd+=("$1")          ; shift   ;;
+      --exit           ) exit="$2"                    ; shift 2 ;;
+      --no-exit        ) no_exit=true                 ; shift   ;;
+      --no-exit-status ) no_exit=true; exit_zero=true ; shift   ;;
+      --expect         ) IFS=, expect+=("$2")         ; shift 2 ;;
+      --no-dry-run     ) dryrun=false                 ; shift   ;;
+      --eval           ) eval=true                    ; shift   ;;
+      --cmd            ) usecmd="$2"                  ; shift 2 ;;
+      --info-level     ) info_level="$2"              ; shift 2 ;;
+      --               ) cmd+=("''${@:2}")            ; break   ;;
+      *                ) cmd+=("$1")                  ; shift   ;;
     esac
   done
 
@@ -229,7 +233,7 @@ _go() {
     if ! $no_exit && [[ ! -v expects[$rv] ]]; then
       die "$exit" "failed (got $rv; expected ''${expect[@]}): $cmdstr"
     fi
-    return $rv
+    $exit_zero && return 0 || return $rv
   fi
 }
 
@@ -245,7 +249,9 @@ gonodryrun       () { _go --exit "$1" --no-dry-run -- "''${@:2}"; }
 gocmdnodryrun    () { _go --exit "$1" --cmd "$2" --no-dry-run -- "''${@:3}"; }
 gocmdnoexit      () { _go --no-exit --cmd "$1" -- "''${@:2}"; }
 gonoexit         () { _go --no-exit -- "$@"; }
-gocmdnoexitnodryrun () { _go --no-exit --no-dry-run --cmd "$1" -- "''${@:2}"; }
+gocmdnoexitnodryrun   () { _go --no-exit --no-dry-run --cmd "$1" -- "''${@:2}"; }
+gocmdnodryrunnoexit   () { _go --no-exit --no-dry-run --cmd "$1" -- "''${@:2}"; }
+gocmdnodryrunexitzero () { _go --no-exit-status --no-dry-run --cmd "$1" -- "''${@:2}"; }
 gocmd2nodryrun   () {
   _go --exit "$1" --cmd "$2" --info-level 2 --no-dry-run -- "''${@:3}"
 }
