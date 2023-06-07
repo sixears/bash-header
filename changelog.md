@@ -1,3 +1,7 @@
+0.0.3.0 2023-06-07
+==================
+- add --return-zero to _go; and thus gocmd01{,nodryrun}
+
 0.0.2.0 2023-06-06
 ==================
 - +gocmdnodryexitzero

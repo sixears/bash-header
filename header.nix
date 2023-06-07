@@ -131,6 +131,13 @@ showcmd () {
 #                          or --exit <NUM> must be specified,
 #   --no-exit-status       Always return 0, even if the command exits non-zero.
 #                          Implies --no-exit.
+#   --return-zero          If the command succeeds (per --expect), then return
+#                          0.  If used without --expect, then as 0 is the
+#                          default expect, this is effectively a no-op.
+#                          N.B., this is different from --no-exit-status because
+#                          that command never returns non-zero; whereas this
+#                          will return non-zero if the command exits with a
+#                          value that is not in the expect list.
 #   --expect <NUM(,NUM)*>  Typically, the cmd is considered to have failed if it
 #                          exits with any code other than 0.  This sets the
 #                          expected exit values to some other set.
@@ -148,7 +155,7 @@ _go() {
   # an argument to -o !
   local -a getopt_opts=( --options ""
 			 --long exit:,no-dry-run,eval,no-exit,expect:,cmd:
-                         --long info-level:,no-exit-status )
+                         --long info-level:,no-exit-status,return-zero )
   local -a getopt_cmd=( ''${Cmd[getopt]} "''${getopt_opts[@]}" -- "$@" )
   # no quote protection around $(...) here - getopt pre-quotes values
   local -a opts=$( "''${getopt_cmd[@]}" ); local rv=$?
@@ -165,20 +172,24 @@ _go() {
   local usecmd=""
   local -a cmd=()
   local info_level=1
-  local exit_zero=false
+  local return_zero=false
+
+  local xs
 
   while [[ 0 -ne $# ]]; do
     case "$1" in
-      --exit           ) exit="$2"                    ; shift 2 ;;
-      --no-exit        ) no_exit=true                 ; shift   ;;
-      --no-exit-status ) no_exit=true; exit_zero=true ; shift   ;;
-      --expect         ) IFS=, expect+=("$2")         ; shift 2 ;;
-      --no-dry-run     ) dryrun=false                 ; shift   ;;
-      --eval           ) eval=true                    ; shift   ;;
-      --cmd            ) usecmd="$2"                  ; shift 2 ;;
-      --info-level     ) info_level="$2"              ; shift 2 ;;
-      --               ) cmd+=("''${@:2}")            ; break   ;;
-      *                ) cmd+=("$1")                  ; shift   ;;
+      --exit           ) exit="$2"                       ; shift 2 ;;
+      --no-exit        ) no_exit=true                    ; shift   ;;
+      --no-exit-status ) no_exit=true; return_zero=true  ; shift   ;;
+      --return-zero    ) return_zero=true                ; shift   ;;
+      --no-dry-run     ) dryrun=false                    ; shift   ;;
+      --eval           ) eval=true                       ; shift   ;;
+      --cmd            ) usecmd="$2"                     ; shift 2 ;;
+      --info-level     ) info_level="$2"                 ; shift 2 ;;
+      --expect         )
+        IFS=, read -a xs <<<"$2"; expect+=("''${xs[@]}") ; shift 2 ;;
+      --               ) cmd+=("''${@:2}")               ; break   ;;
+      *                ) cmd+=("$1")                     ; shift   ;;
     esac
   done
 
@@ -233,7 +244,15 @@ _go() {
     if ! $no_exit && [[ ! -v expects[$rv] ]]; then
       die "$exit" "failed (got $rv; expected ''${expect[@]}): $cmdstr"
     fi
-    $exit_zero && return 0 || return $rv
+    if $return_zero; then
+      if $no_exit || [[ -v expects[$rv] ]]; then
+        return 0
+      else
+        return $rv
+      fi
+    else
+      return $rv
+    fi
   fi
 }
 
@@ -260,6 +279,16 @@ gocmd3nodryrun   () {
 }
 gocmd2noexitnodryrun () {
   _go --no-exit --no-dry-run --cmd "$1" --info-level 2 -- "''${@:2}"
+}
+
+# like gocmd, but expects 0 or 1 for exit; returns 0 if cmd returns 0 or 1
+gocmd01 () {
+  _go --exit "$1" --cmd "$2" --expect 0,1 --return-zero -- "''${@:3}"
+}
+# like gocmd, but expects 0 or 1 for exit; returns 0 if cmd returns 0 or 1
+gocmd01nodryrun () {
+  _go --exit "$1" --cmd "$2" --expect 0,1 --return-zero --no-dry-run -- \
+      "''${@:3}"
 }
 
 # --------------------------------------
@@ -541,9 +570,9 @@ capture_array() {
   local __captured__
   capture __captured__ "''${__cmd__[@]}"
 
-  readarray -t "$__varname__" < <( echo "$__captured__"             \
-                                     | gocmdnodryrun 253 tr -s ' \n\t' '\n' \
-                                     | gocmdnodryrun 250 grep -Ev '^ *$'    )
+  readarray -t "$__varname__" < <( echo "$__captured__"                       \
+                                     | gocmdnodryrun   253 tr -s ' \n\t' '\n' \
+                                     | gocmd01nodryrun 250 grep -Ev '^ *$'    )
 }
 
 # Concatenate strings, separated by a given character
