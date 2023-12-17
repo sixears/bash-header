@@ -321,7 +321,7 @@ gocmde() {
 # --------------------------------------
 
 # check that the value of $1 is $0, else fail citing $2...
-check() { local rv=$1; [ 0 -eq "$1" ] || die "$1" "''${*:2} failed"; }
+check() { [[ 0 -eq $1 ]] || die "$1" "''${*:2} failed"; }
 check_() { check $? "''${@:1}"; }
 
 # --------------------------------------
