@@ -581,7 +581,7 @@ capture_array() {
   # `trap`); shopt -s lastpipe (again, restoring the original value on return)
   # and then putting the read array at the end of the pipeline.  :shrug: either
   # works, I can't think of a reason to prefer one over the other
-  capture captured "''${__cmd__[@]}"
+  capture captured "''${cmd[@]}"
 
   readarray -t __varname__ < <( echo "$captured"                       \
                                      | gocmdnodryrun   241 tr -s ' \n\t' '\n' \
