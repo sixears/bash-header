@@ -478,7 +478,7 @@ cp_dir() {
   local du=( du --summarize --bytes "$from" )
   local cut=( cut --delimiter="$Tab" --fields=1 )
   local size
-  size="$(gocmd 245 "''${du[@]}" | gocmd 242 "''${cut[@]}")";check $? "du | cut"
+  size="$(gocmd 238 "''${du[@]}" | gocmd 242 "''${cut[@]}")";check $? "du | cut"
   info "source size: $size"
 
   local find=( find "$from" -depth -printf '%P\n' )
@@ -502,7 +502,7 @@ cp_dir() {
 
 # test if dir is empty
 
-dir_empty() { [[ "" == "$( gocmd 251 ls -A "$1" )" ]]; }
+dir_empty() { [[ "" == "$( gocmd 240 ls -A "$1" )" ]]; }
 
 # --------------------------------------
 
@@ -550,7 +550,7 @@ capture() {
 # The variable created will be an array, the contents being the space-separated
 # words from the command output; leading and trailing spaces are dropped.
 # Newlines are considered as spaces.  Multiple spaces are conjoined, so e.g.,
-# output of "  bar\n\tfoo" will result in thme array `( bar foo )`.
+# output of "  bar\n\tfoo" will result in the array `( bar foo )`.
 #
 # A 'space' in this context is a literal space, tab-character or newline.
 #
@@ -565,14 +565,27 @@ capture() {
 #   capture_array harry go 7 echo -e '  foo\n bar\t\tbaz'
 #     # equivalent to harry=( foo bar baz )
 capture_array() {
-  local __varname__="$1" __cmd__=("''${@:2}")
+  [[ $1 == __varname__ ]] && die 242 "$(loc) don't use '__varname__' here!"
+  # if we called this varname, then bash would warn of a circular name
+  # reference: which I think would be effectively just a warning (everything
+  # would work fine); but still, the use of __varname__ makes it less likely to
+  # be noisy
+  local -n __varname__="$1"
+  local cmd=("''${@:2}")
 
-  local __captured__
-  capture __captured__ "''${__cmd__[@]}"
+  local captured
+  # readarray swallows the exit code.
+  #
+  # a possible alternate approach would be to set +m (turn off job control)
+  # (being careful to restore the prior setting of -m on return, e.g., with a
+  # `trap`); shopt -s lastpipe (again, restoring the original value on return)
+  # and then putting the read array at the end of the pipeline.  :shrug: either
+  # works, I can't think of a reason to prefer one over the other
+  capture captured "''${__cmd__[@]}"
 
-  readarray -t "$__varname__" < <( echo "$__captured__"                       \
-                                     | gocmdnodryrun   253 tr -s ' \n\t' '\n' \
-                                     | gocmd01nodryrun 250 grep -Ev '^ *$'    )
+  readarray -t __varname__ < <( echo "$captured"                       \
+                                     | gocmdnodryrun   241 tr -s ' \n\t' '\n' \
+                                     | gocmd01nodryrun 239 grep -Ev '^ *$'    )
 }
 
 # Concatenate strings, separated by a given character

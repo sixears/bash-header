@@ -1,3 +1,12 @@
+0.0.4.0 2024-07-11
+==================
+- slightly cleaner check() (code cleanup, no user change)
+- add better commentary to capture
+- capture uses local -n for varname, thus avoiding potential name clashes
+  (such clashes will still elicit a warning, but won't actually break; I think)
+- capture will die if called with __varname__ as its varname
+- some error code tidying
+
 0.0.3.0 2023-06-07
 ==================
 - add --return-zero to _go; and thus gocmd01{,nodryrun}
