@@ -1,3 +1,7 @@
+0.0.5.0 2024-07-15
+==================
+- add signal warning in exit warning
+
 0.0.4.0 2024-07-11
 ==================
 - slightly cleaner check() (code cleanup, no user change)

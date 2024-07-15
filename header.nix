@@ -34,6 +34,7 @@ Cmd[getopt]=${pkgs.utillinux}/bin/getopt
 Cmd[grep]=${pkgs.gnugrep}/bin/grep
 Cmd[head]=${pkgs.coreutils}/bin/head
 Cmd[id]=${pkgs.coreutils}/bin/id
+Cmd[kill]=${pkgs.utillinux}/bin/kill
 Cmd[ln]=${pkgs.coreutils}/bin/ln
 Cmd[ls]=${pkgs.coreutils}/bin/ls
 Cmd[mkdir]=${pkgs.coreutils}/bin/mkdir
@@ -41,6 +42,7 @@ Cmd[mktemp]=${pkgs.coreutils}/bin/mktemp
 Cmd[mv]=${pkgs.coreutils}/bin/mv
 Cmd[nix]=${pkgs.nix}/bin/nix
 Cmd[nix-env]=${pkgs.nix}/bin/nix-env
+Cmd[perl]=${pkgs.perl}/bin/perl
 Cmd[pv]=${pkgs.pv}/bin/pv
 Cmd[realpath]=${pkgs.coreutils}/bin/realpath
 Cmd[rm]=${pkgs.coreutils}/bin/rm
@@ -242,7 +244,14 @@ _go() {
 
     if $eval; then eval "''${cmd[@]}"; else "''${cmd[@]}"; fi; rv=$?
     if ! $no_exit && [[ ! -v expects[$rv] ]]; then
-      die "$exit" "failed (got $rv; expected ''${expect[@]}): $cmdstr"
+      local got="got $rv"
+      if [[ $rv -gt 128 ]] && [[ $rv -le 192 ]]; then
+        local sig=$(($rv & 127))
+        local sig_name
+        capture sig_name gocmdnodryrun 235 kill --list="$sig"
+        got+=" «sig$sig_name?»"
+      fi
+      die "$exit" "failed ($got; expected ''${expect[@]}): $cmdstr"
     fi
     if $return_zero; then
       if $no_exit || [[ -v expects[$rv] ]]; then
@@ -594,6 +603,24 @@ capture_array() {
 #  - ) Character to join with: note it must be a character, not a string.
 #  * ) The strings to join.
 joinsep() { local IFS="$2"; printf -v "$1" %s "''${*:3}"; }
+
+signal_array() {
+  local line field rv
+
+  gonodryrun 237 kill -l | while read line; do
+    while true; do
+      read -d $'\t' field; rv=$?
+      if [[ $field =~ ^([0-9]+)\)\ ([A-Z]+[-+]?[0-9]*)$ ]]; then
+        echo "''${BASH_REMATCH[1]} ''${BASH_REMATCH[2]}"
+      else
+        die 236 "failed to parse kill -l output: '$field'"
+      fi
+      [[ $rv -eq 0 ]] || break
+    done <<<"$line"
+  done
+
+exit 99
+}
 
 # -- that's all, folks! --------------------------------------------------------
 '';}
