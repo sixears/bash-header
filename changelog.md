@@ -1,3 +1,7 @@
+0.0.6.0 2025-03-19
+==================
+- fix info{,f}_ to not return !=0 if info is not written
+
 0.0.5.0 2024-07-15
 ==================
 - add signal warning in exit warning

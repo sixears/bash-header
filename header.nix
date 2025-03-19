@@ -72,8 +72,8 @@ ShowCmds=false
 
 warn               () { local i; for i in "$@"; do echo -e "$i" >&99; done; }
 warnf              () { printf "$@" >&99; }
-info_              () { local m=$1; [[ $m -le $Verbose ]] && warn "''${@:2}"; }
-infof_             () { local m=$1; [[ $m -le $Verbose ]] && warnf "''${@:2}"; }
+info_              () { local m=$1; if [[ $m -le $Verbose ]]; then warn "''${@:2}"; fi; }
+infof_             () { local m=$1; if [[ $m -le $Verbose ]]; then warnf "''${@:2}"; fi; }
 info               () { info_ 1 "$@"; }
 infof              () { infof_ 1 "$@"; }
 info2              () { info_ 2 "$@"; }
