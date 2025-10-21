@@ -1,3 +1,7 @@
+0.0.7.0 2025-10-21
+==================
+- add gocmd01{,nodryrun}_
+
 0.0.6.0 2025-03-19
 ==================
 - fix info{,f}_ to not return !=0 if info is not written

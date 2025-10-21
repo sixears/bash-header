@@ -299,6 +299,15 @@ gocmd01nodryrun () {
   _go --exit "$1" --cmd "$2" --expect 0,1 --return-zero --no-dry-run -- \
       "''${@:3}"
 }
+# like gocmd01, but returns 0 or 1 as appropriate
+gocmd01_ () {
+  _go --exit "$1" --cmd "$2" --expect 0,1 -- "''${@:3}"
+}
+# like gocmd01nodryrun, but returns 0 or 1 as appropriate
+gocmd01nodryrun_ () {
+  _go --exit "$1" --cmd "$2" --expect 0,1 --no-dry-run -- \
+      "''${@:3}"
+}
 
 # --------------------------------------
 
